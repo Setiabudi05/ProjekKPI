@@ -1,0 +1,42 @@
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+
+# Laravel Specific
+/bootstrap/cache/*.php
+/storage/*.key
+/storage/app/public
+/storage/framework/cache/data
+/storage/framework/views
+/storage/framework/sessions
+/storage/logs/*.log
+/public/build
+
+# IDE/Tools Specific
+.DS_Store
+.idea
+.vscode
+.fleet
+.nova
+.zed
+
+# Environment & Cache
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+.phpunit.cache
+.phpactor.json
+/auth.json
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# Tambahan dari permintaan Anda
+*.log             # Menambahkan semua file log di root (meskipun sudah di handle oleh /storage/logs)
+/storage/pail     # Menambahkan direktori pail (terkait storage)
+
+# Untuk memastikan .env dan turunannya tetap diabaikan
+.env*
