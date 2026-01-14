@@ -8,24 +8,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
-    {
-        Schema::create('attendances', function (Blueprint $table) {
-            $table->id();
-            // Foreign Key ke tabel interns
-            $table->foreignId('intern_id')->constrained('interns')->onDelete('cascade'); 
-            
-            $table->date('date')->useCurrent(); // Tanggal absensi
-            $table->time('time_in')->nullable();
-            $table->time('time_out')->nullable();
-            $table->enum('status', ['Hadir', 'Izin', 'Sakit', 'Alpha']);
-            $table->text('notes')->nullable();
-            $table->timestamps();
-
-            // Memastikan satu intern hanya bisa absen satu kali dalam sehari
-            $table->unique(['intern_id', 'date']); 
-        });
-    }
+   public function up(): void
+{
+    Schema::create('attendances', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('intern_id')->constrained()->onDelete('cascade');
+        $table->date('date');
+        $table->time('check_in')->nullable();  // Tambahkan ini
+        $table->time('check_out')->nullable(); // Tambahkan ini
+        $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha']);
+        $table->text('notes')->nullable();
+        $table->timestamps();
+    });
+}
 
     public function down(): void
     {

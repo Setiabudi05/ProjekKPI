@@ -1,103 +1,152 @@
-@extends('admin.layouts.master')
+@extends('layouts.master')
+@section('title', 'Data Peserta Magang')
 
-@section('title', 'Data Anak Magang')
-
-@section('styles')
-    <!-- Datatables CSS -->
-    {{-- Memastikan link ini mengambil aset dari folder public/assets --}}
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css">
-    <link href="{{ asset('assets/vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
-@endsection
+@push('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        .swal-custom-popup { font-size: 0.85rem !important; }
+        .avatar-table { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
+    </style>
+@endpush
 
 @section('content')
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Data Anak Magang</h1>
-        <div>
-            <!-- Link ke halaman tambah data -->
-            <a href="{{ route('admin.interns.create') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Tambah Anak Magang</a>
-            <button class="btn btn-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Cetak Data</button>
+<div class="page-heading">
+    <div class="page-title">
+        <div class="row align-items-center">
+            <div class="col-12 col-md-7">
+                <nav aria-label="breadcrumb" class="mb-1">
+                    <ol class="breadcrumb" style="font-size: 0.85rem;">
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-muted">Dashboard</a></li>
+                        <li class="breadcrumb-item active text-primary" aria-current="page">Peserta Magang</li>
+                    </ol>
+                </nav>
+                <h3 class="fw-bold mb-0">Manajemen Peserta Magang</h3>
+                <p class="text-muted mb-0">Kelola data mahasiswa/siswa yang sedang melaksanakan magang.</p>
+            </div>
+
+            <div class="col-12 col-md-5 d-flex justify-content-md-end align-items-center mt-3 mt-md-0 gap-2">
+                <select id="filter-status" class="form-select shadow-sm" style="width: 150px;">
+                    <option value="">Semua Status</option>
+                    <option value="aktif" selected>Aktif</option>
+                    <option value="selesai">Selesai</option>
+                </select>
+                
+                <a href="{{ route('admin.interns.create') }}" class="btn btn-primary shadow-sm px-3 fw-bold">
+                    <i class="bi bi-person-plus-fill me-1"></i> Tambah Peserta
+                </a>
+            </div>
         </div>
     </div>
+    <hr>
+</div>
 
-    @if (Session::has('success'))
-        <div class="alert alert-success alert-dismissible" role="alert">
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            {{ Session::get('success') }}
-        </div>
-    @endif
-
-    <!-- Card Tabel -->
-    <div class="card shadow mb-4">
+<section class="section">
+    <div class="card border-0 shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered" id="dataMagangTable" width="100%" cellspacing="0">
-                    <thead class="thead-light">
+                <table class="table table-hover align-middle interns-table" style="width:100%">
+                    <thead>
                         <tr>
-                            <th>No</th>
-                            <th>Nama</th>
-                            <th>NIS/NIM</th> 
-                            <th>Sekolah/Universitas</th>
-                            <th>Jurusan</th>
-                            <th>Periode Magang</th>
-                            <th>Aksi</th>
+                            <th class="text-center">No</th>
+                            <th>Nama Peserta</th>
+                            <th>Email</th>
+                            <th>Instansi/Sekolah</th>
+                            <th>Posisi</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse ($interns as $intern)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $intern->name }}</td>
-                            <td>{{ $intern->student_id }}</td> 
-                            <td>{{ $intern->school }}</td>
-                            <td>{{ $intern->major }}</td>
-                            <td>{{ $intern->period }}</td>
-                            <td>
-                                <!-- Tombol Edit -->
-                                <a href="{{ route('admin.interns.edit', $intern->id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Edit</a>
-                                
-                                <!-- Tombol Hapus dengan Form -->
-                                <form action="{{ route('admin.interns.destroy', $intern->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data {{ $intern->name }}?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="text-center">Belum ada data anak magang yang tercatat.</td>
-                        </tr>
-                        @endforelse
-                    </tbody>
                 </table>
             </div>
         </div>
     </div>
+</section>
 @endsection
 
-@section('scripts')
-    <!-- Datatables JS Libraries -->
-    {{-- Mengambil aset Datatables dari folder public/assets dan CDN --}}
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
-    <script src="{{ asset('assets/vendor/datatables/jquery.dataTables.min.js') }}"></script>
-    <script src="{{ asset('assets/vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+@push('js')
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.0.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        $(document).ready(function () {
-            // Cek apakah jQuery tersedia (kadang-kadang jQuery dimuat setelah datatables)
-            if (typeof $.fn.DataTable !== 'undefined') {
-                 $('#dataMagangTable').DataTable({
-                    "pageLength": 10,
-                    "lengthChange": false,
-                    "ordering": true,
-                    "language": {
-                         "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/id.json" // Tambahkan bahasa Indonesia
+<script>
+    $(document).ready(function () {
+        let table = $('.interns-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ route('admin.interns.index') }}", 
+                data: function (d) { 
+                    d.status = $('#filter-status').val(); 
+                }
+            },
+            columns: [
+                { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, class: 'text-center' },
+                { 
+                    data: 'name', 
+                    name: 'name', 
+                    render: function(data) {
+                        return `<div class="d-flex align-items-center">
+                                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(data)}&background=random" class="avatar-table me-2">
+                                    <div class="fw-bold">${data}</div>
+                                </div>`;
+                    }
+                },
+                { data: 'email', name: 'email' },
+                { data: 'school', name: 'school' }, // Diubah dari institution ke school agar sesuai DB
+                { data: 'position', name: 'position' },    
+                { 
+                    data: 'status', 
+                    name: 'status', 
+                    class: 'text-center',
+                    render: function(data) {
+                        let color = data === 'aktif' ? 'success' : 'secondary';
+                        return `<span class="badge bg-light-${color} text-${color} text-uppercase" style="font-size:0.7rem">${data}</span>`;
+                    }
+                },
+                { data: 'action', name: 'action', orderable: false, searchable: false }
+            ]
+        });
+
+        $('#filter-status').on('change', function () { 
+            table.draw(); 
+        });
+    });
+
+    function hapus(id) {
+        Swal.fire({
+            title: "Hapus Peserta?",
+            text: "Seluruh data absensi peserta ini juga akan terhapus!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Ya, Hapus!",
+            cancelButtonText: "Batal"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ url('admin/data-magang') }}/" + id, 
+                    type: "DELETE",
+                    data: { _token: "{{ csrf_token() }}" },
+                    success: function (res) {
+                        Swal.fire("Terhapus!", res.message, "success");
+                        $('.interns-table').DataTable().ajax.reload();
                     }
                 });
             }
         });
-    </script>
-@endsection
+    }
+</script>
+
+@if(session('swal_success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: "{{ session('swal_success') }}",
+        timer: 2000,
+        showConfirmButton: false
+    });
+</script>
+@endif
+@endpush

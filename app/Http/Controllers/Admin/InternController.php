@@ -2,119 +2,107 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 use App\Models\Intern; 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
+use Yajra\DataTables\Facades\DataTables;
 
 class InternController extends Controller
 {
-    /**
-     * Menampilkan daftar anak magang (READ - Index).
-     *
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // Ambil semua data magang, diurutkan berdasarkan nama
-        $interns = Intern::orderBy('name')->get(); 
-        
-        return view('admin.interns.index', compact('interns'));
+        if ($request->ajax()) {
+            $data = Intern::query();
+
+            // Logika Filter Status
+            if ($request->filled('status')) {
+                $data->where('status', $request->status);
+            }
+
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->orderColumn('DT_RowIndex', false) // Menonaktifkan sorting pada kolom No agar tidak error SQL
+                ->addColumn('action', function($row) {
+                    return '<div class="d-flex justify-content-center gap-1">
+                                <a href="'.route('admin.interns.edit', $row->id).'" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <button type="button" onclick="hapus('.$row->id.')" class="btn btn-sm btn-outline-danger" title="Hapus">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+        }
+
+        return view('admin.interns.index');
     }
 
-    /**
-     * Menampilkan form untuk menambah anak magang baru (CREATE).
-     *
-     * @return \Illuminate\Contracts\View\View
-     */
     public function create()
     {
         return view('admin.interns.create');
     }
 
-    /**
-     * Menyimpan anak magang baru ke database (STORE).
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function store(Request $request)
     {
-        // Validasi input
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:interns,email',
             'student_id' => 'required|string|unique:interns,student_id|max:50',
-            'school' => 'required|string|max:255',
-            'major' => 'required|string|max:255',
-            'period' => 'required|string|max:255',
+            'school'     => 'required|string|max:255', 
+            'major'      => 'required|string|max:255',
+            'period'     => 'required|string|max:255',
+            'position'   => 'required|string|max:255',
+            'status'     => 'required|in:aktif,selesai',
         ]);
 
-        // Buat record baru di database
-        Intern::create([
-            'name' => $request->name,
-            'student_id' => $request->student_id,
-            'school' => $request->school,
-            'major' => $request->major,
-            'period' => $request->period,
-        ]);
+        Intern::create($request->all());
 
-        Session::flash('success', 'Data anak magang berhasil ditambahkan!');
-        return redirect()->route('admin.interns.index');
+        return redirect()->route('admin.interns.index')->with('swal_success', 'Peserta magang berhasil didaftarkan!');
     }
 
-    /**
-     * Menampilkan form untuk mengedit anak magang (EDIT).
-     *
-     * @param  \App\Models\Intern  $data_magang
-     * @return \Illuminate\Contracts\View\View
-     */
-    public function edit(Intern $data_magang) 
+    public function edit($id) 
     {
-        // $data_magang diisi otomatis oleh Laravel karena Model Binding
+        $data_magang = Intern::findOrFail($id);
         return view('admin.interns.edit', compact('data_magang'));
     }
 
-    /**
-     * Memperbarui data anak magang di database (UPDATE).
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Intern  $data_magang
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(Request $request, Intern $data_magang)
+    public function update(Request $request, $id)
     {
-        // Validasi, pastikan student_id unik kecuali untuk record ini sendiri
+        $intern = Intern::findOrFail($id);
+
         $request->validate([
-            'name' => 'required|string|max:255',
-            'student_id' => 'required|string|unique:interns,student_id,' . $data_magang->id . '|max:50',
-            'school' => 'required|string|max:255',
-            'major' => 'required|string|max:255',
-            'period' => 'required|string|max:255',
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:interns,email,' . $intern->id,
+            'student_id' => 'required|string|unique:interns,student_id,' . $intern->id,
+            'school'     => 'required|string|max:255',
+            'major'      => 'required|string|max:255',
+            'period'     => 'required|string|max:255',
+            'position'   => 'required|string|max:255',
+            'status'     => 'required|in:aktif,selesai',
         ]);
 
-        // Perbarui record di database
-        $data_magang->update([
-            'name' => $request->name,
-            'student_id' => $request->student_id,
-            'school' => $request->school,
-            'major' => $request->major,
-            'period' => $request->period,
-        ]);
+        $intern->update($request->all());
 
-        Session::flash('success', 'Data anak magang berhasil diperbarui!');
-        return redirect()->route('admin.interns.index');
+        return redirect()->route('admin.interns.index')->with('swal_success', 'Data berhasil diperbarui!');
     }
 
-    /**
-     * Menghapus anak magang dari database (DELETE).
-     *
-     * @param  \App\Models\Intern  $data_magang
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroy(Intern $data_magang)
+    public function destroy($id)
     {
-        $data_magang->delete();
-        Session::flash('success', 'Data anak magang berhasil dihapus!');
-        return redirect()->route('admin.interns.index');
+        try {
+            $intern = Intern::findOrFail($id);
+            $intern->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data peserta magang telah dihapus.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data.'
+            ]);
+        }
     }
 }

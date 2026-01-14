@@ -1,61 +1,68 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
-use Illuminate\Routing\Controller;
+
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Intern; 
+use App\Models\User;
 use App\Models\Attendance;
+use Yajra\DataTables\Facades\DataTables;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $today = now()->toDateString();
+        // LOGIKA AJAX UNTUK MONITOR ABSENSI (SERVER-SIDE)
+        if ($request->ajax()) {
+            $data = Attendance::with('intern')
+                ->whereDate('date', Carbon::today())
+                ->select('attendances.*');
 
-        // 1. Total Anak Magang
-        $totalMagang = Intern::count();
+            return DataTables::of($data)
+                ->addIndexColumn()
+                ->addColumn('intern_name', function($row) {
+                    $name = $row->intern->name ?? 'User';
+                    // Menggunakan Avatar Bulat seperti di fitur Intern
+                    return '<div class="d-flex align-items-center">
+                                <img src="https://ui-avatars.com/api/?name='.urlencode($name).'&background=random" class="avatar-table me-2">
+                                <div class="fw-bold">'.$name.'</div>
+                            </div>';
+                })
+                ->editColumn('check_in', function($row) {
+                    return $row->check_in ? date('H:i', strtotime($row->check_in)) : '--:--';
+                })
+                ->editColumn('check_out', function($row) {
+                    return $row->check_out ? date('H:i', strtotime($row->check_out)) : '--:--';
+                })
+                ->editColumn('status', function($row) {
+                    // Badge Light seperti di fitur Intern
+                    $val = strtolower($row->status);
+                    $colors = ['hadir' => 'success', 'izin' => 'warning', 'sakit' => 'info', 'alpha' => 'danger'];
+                    $color = $colors[$val] ?? 'secondary';
+                    return '<span class="badge bg-light-'.$color.' text-'.$color.' text-uppercase" style="font-size:0.7rem">'.$row->status.'</span>';
+                })
+                ->rawColumns(['intern_name', 'status'])
+                ->make(true);
+        }
 
-        // 2. Hadir Hari Ini
-        $hadirHariIni = Attendance::where('date', $today)
-            ->where('status', 'Hadir')
-            ->whereNotNull('time_in')
-            ->count();
+        // STATISTIK DASHBOARD
+        $totalInterns = User::where('role', 'user')->count();
+        $totalAdmin = User::where('role', 'admin')->count();
+        $attendanceToday = Attendance::whereDate('date', Carbon::today())->count();
+        $internsActive = User::where('role', 'user')->count(); 
 
-        // 3. Izin / Sakit
-        $izinSakit = Attendance::where('date', $today)
-            ->whereIn('status', ['Izin', 'Sakit'])
-            ->count();
-            
-        // 4. Alpha (Total Magang - (Hadir + Izin + Sakit))
-        $alpha = $totalMagang - ($hadirHariIni + $izinSakit);
-        // Pastikan Alpha tidak negatif
-        $alpha = max(0, $alpha);
+        $latestInterns = User::where('role', 'user')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
 
-        // Riwayat Absensi Hari Ini (Data Dummy sementara sebelum kita implementasi penuh)
-        $riwayatAbsensi = Attendance::where('date', $today)
-            ->with('intern')
-            ->take(5) // Ambil 5 data terbaru
-            ->get()
-            ->map(function($att, $key) {
-                return [
-                    'no' => $key + 1,
-                    'nama' => $att->intern->name,
-                    'tanggal' => $att->date,
-                    'masuk' => $att->time_in ?? '-',
-                    'pulang' => $att->time_out ?? '-',
-                    'status' => $att->status,
-                    'badge_class' => $att->status == 'Hadir' ? 'badge-success' : ($att->status == 'Izin' || $att->status == 'Sakit' ? 'badge-warning' : 'badge-danger'),
-                ];
-            })->toArray(); // Konversi ke array untuk ditampilkan di view
-
-        $data = [
-            'total_magang' => $totalMagang, 
-            'hadir_hari_ini' => $hadirHariIni, 
-            'izin_sakit' => $izinSakit,
-            'alpha' => $alpha,
-            'riwayat_absensi' => $riwayatAbsensi,
-        ];
-
-        return view('admin.dashboard', $data); 
+        return view('admin.dashboard', compact(
+            'totalInterns', 
+            'totalAdmin', 
+            'internsActive', 
+            'attendanceToday',
+            'latestInterns'
+        ));
     }
 }

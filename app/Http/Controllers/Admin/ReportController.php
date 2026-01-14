@@ -2,37 +2,79 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Routing\Controller;
-use App\Models\Attendance;
+use App\Http\Controllers\Controller;
+use App\Models\Intern;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
-    /**
-     * Menampilkan halaman Laporan Absensi dengan filter.
-     */
     public function index(Request $request)
     {
-        // Query untuk mengambil semua data absensi
-        $query = Attendance::with('intern') 
-            ->latest('date');
+        // Mengambil data untuk dropdown agar tidak error 'Undefined variable $pesertas'
+        $pesertas = Intern::orderBy('name', 'asc')->get();
 
-        // Logika filter berdasarkan status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $month = $request->get('month');
+        $year = $request->get('year', date('Y'));
+        $userId = $request->get('user_id');
+
+        if ($request->ajax()) {
+            $query = Intern::with([
+                'attendances' => function ($q) use ($month, $year) {
+                    if ($month) {
+                        $q->whereMonth('date', $month);
+                    }
+                    $q->whereYear('date', $year);
+                }
+            ]);
+
+            if ($userId) {
+                $query->where('id', $userId);
+            }
+
+            $data = $query->get();
+
+            return DataTables::of($data)
+                ->addIndexColumn()
+                // DISESUAIKAN: Menggunakan "Hadir" sesuai dengan isi database Anda
+                ->addColumn('hadir', fn($row) => $row->attendances->where('status', 'Hadir')->count())
+                ->addColumn('izin', fn($row) => $row->attendances->where('status', 'Izin')->count())
+                ->addColumn('sakit', fn($row) => $row->attendances->where('status', 'Sakit')->count())
+                ->addColumn('alpha', fn($row) => $row->attendances->where('status', 'Alpha')->count())
+                ->make(true);
         }
-        
-        // Logika filter berdasarkan tanggal (bisa dikembangkan di view)
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('date', [$request->start_date, $request->end_date]);
+
+        return view('admin.report.index', compact('pesertas', 'month', 'year'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $month = $request->get('month');
+        $year = $request->get('year', 2026);
+        $userId = $request->get('user_id');
+
+        // Mengambil data peserta beserta detail absensinya
+        $query = Intern::with([
+            'attendances' => function ($q) use ($month, $year) {
+                if ($month) {
+                    $q->whereMonth('date', $month);
+                }
+                $q->whereYear('date', $year);
+                $q->orderBy('date', 'asc'); // Urutkan berdasarkan tanggal tertua
+            }
+        ]);
+
+        if ($userId) {
+            $query->where('id', $userId);
         }
 
+        $reports = $query->get();
 
-        $reports = $query->paginate(20); 
+        // Label periode untuk judul
+        $periodeLabel = $month ? date('F', mktime(0, 0, 0, $month, 1)) . " $year" : "Seluruh Periode Magang ($year)";
 
-        // Daftar status untuk filter di view
-        $statuses = ['Hadir', 'Izin', 'Sakit', 'Alpha'];
-
-        return view('admin.laporan.index', compact('reports', 'statuses'));
+        $pdf = Pdf::loadView('admin.report.pdf', compact('reports', 'periodeLabel'));
+        return $pdf->stream("Laporan_Detail_Absensi.pdf");
     }
 }

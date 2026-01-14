@@ -10,7 +10,20 @@ class Intern extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'student_id', 'school'];
+    /**
+     * Pastikan semua kolom yang digunakan di Controller dan Migration 
+     * terdaftar di dalam $fillable agar bisa disimpan ke database.
+     */
+    protected $fillable = [
+        'name', 
+        'email', 
+        'student_id', 
+        'school', 
+        'major', 
+        'period', 
+        'position', 
+        'status'
+    ];
 
     /**
      * Relasi ke model Attendance (Satu Intern memiliki banyak Attendance)
