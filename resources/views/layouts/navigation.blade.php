@@ -1,91 +1,88 @@
-<nav class="navbar navbar-expand navbar-light">
-    <div class="container-fluid">
+<nav class="navbar navbar-expand navbar-light pt-4 px-4">
+    <div class="container-fluid bg-white shadow-sm rounded-pill px-4 py-2" style="border: 1px solid #e8e8e9;">
         {{-- Burger Button untuk Mobile --}}
-        <a href="#" class="burger-btn d-block">
-            <i class="bi bi-justify fs-3"></i>
+        <a href="#" class="burger-btn d-block d-xl-none">
+            <i class="bi bi-justify fs-3 text-primary"></i>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                <li class="nav-item dropdown me-3">
-                    <a class="nav-link active dropdown-toggle text-gray-600" href="#" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        <i class='bi bi-bell bi-sub fs-4'></i>
-                        <span class="badge badge-notification bg-danger">0</span>
+            {{-- Search Bar Transparan --}}
+            <div class="d-none d-md-flex align-items-center">
+                <div class="input-group input-group-sm rounded-pill px-3 py-1" style="width: 300px; background-color: rgba(231, 234, 243, 0.6);">
+                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control bg-transparent border-0 shadow-none ps-0" placeholder="Cari data...">
+                </div>
+            </div>
+
+            <ul class="navbar-nav ms-auto mb-lg-0 align-items-center">
+                {{-- Notifikasi --}}
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link text-gray-500 position-relative p-2" href="#" data-bs-toggle="dropdown">
+                        <i class='bi bi-bell fs-5'></i>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger rounded-circle border border-white" style="margin-top: 8px; margin-left: -5px;"></span>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                        <li><h6 class="dropdown-header">Notifikasi</h6></li>
-                        <li><a class="dropdown-item">Belum ada notifikasi baru</a></li>
+                </li>
+
+                <div class="vr mx-3 opacity-25" style="height: 30px; align-self: center;"></div>
+
+                {{-- User Profile --}}
+                <li class="nav-item dropdown">
+                    <a href="#" data-bs-toggle="dropdown" class="d-flex align-items-center gap-2 text-decoration-none py-1">
+                        <div class="user-name text-end d-none d-sm-block">
+                            <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.85rem;">{{ Auth::user()->name }}</h6>
+                            <p class="mb-0 text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Admin</p>
+                        </div>
+                        <div class="avatar avatar-md border border-light shadow-sm">
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=435ebe&color=fff" 
+                                 class="rounded-circle">
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-3 py-2 px-2" style="min-width: 200px; border-radius: 15px;">
+                        <li><h6 class="dropdown-header small text-uppercase text-muted fw-bold">Pengaturan Sesi</h6></li>
+                        <li><a class="dropdown-item rounded-3 py-2" href="#"><i class="bi bi-person me-2"></i> Profil</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger fw-bold rounded-3 py-2" href="#" id="logout-btn-navbar">
+                            <i class="bi bi-power me-2"></i> Logout
+                        </a></li>
                     </ul>
                 </li>
             </ul>
-
-            <div class="dropdown">
-                <a href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <div class="user-menu d-flex align-items-center">
-                        <div class="user-name text-end me-3">
-                            <h6 class="mb-0 text-gray-600 fw-bold">{{ Auth::user()->name }}</h6>
-                            <p class="mb-0 text-xs text-gray-500">Administrator</p>
-                        </div>
-                        <div class="user-img d-flex align-items-center">
-                            <div class="avatar avatar-md shadow-sm">
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=435ebe&color=fff">
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                    <li><h6 class="dropdown-header">Halo, {{ explode(' ', Auth::user()->name)[0] }}!</h6></li>
-                    <li><a class="dropdown-item" href="#"><i class="icon-mid bi bi-person me-2"></i> Profil Saya</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        {{-- GANTI href="#" MENJADI route('logout') --}}
-                        <a class="dropdown-item text-danger fw-bold" href="{{ route('logout') }}" id="logout-btn">
-                            <i class="icon-mid bi bi-box-arrow-right me-2"></i> Logout
-                        </a>
-                    </li>
-                </ul>
-            </div>
         </div>
     </div>
 </nav>
 
-{{-- Form Logout Tetap Dibutuhkan --}}
+{{-- Form Logout Hidden --}}
 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
     @csrf
 </form>
 
+{{-- Script Konfirmasi Logout --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const btnLogout = document.getElementById('logout-btn');
-        if (btnLogout) {
-            btnLogout.addEventListener('click', function(e) {
-                // e.preventDefault() akan membatalkan navigasi normal ke URL logout (GET)
-                // dan menggantinya dengan popup konfirmasi ini
-                e.preventDefault();
-
-                Swal.fire({
-                    title: 'Apakah kamu yakin?',
-                    text: "Sesi Anda akan segera berakhir!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#435ebe',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Ya, Logout!',
-                    cancelButtonText: 'Batal',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Jika dikonfirmasi, form POST akan dijalankan
-                        document.getElementById('logout-form').submit();
-                    }
-                })
-            });
-        }
+        const logoutActions = ['logout-btn-sidebar', 'logout-btn-navbar'];
+        logoutActions.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Keluar dari Sistem?',
+                        text: "Sesi Anda akan berakhir setelah ini.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#435ebe',
+                        cancelButtonColor: '#ff7976',
+                        confirmButtonText: 'Ya, Logout',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        borderRadius: '15px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('logout-form').submit();
+                        }
+                    })
+                });
+            }
+        });
     });
 </script>
