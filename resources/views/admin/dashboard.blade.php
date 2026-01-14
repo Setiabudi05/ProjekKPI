@@ -87,6 +87,19 @@
 
 @section('content')
 <div class="page-heading mb-4">
+    @if(session('login_success'))
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert" id="autoAlert" style="border-radius: 12px;">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+            <div>
+                <strong class="d-block">Login Berhasil</strong>
+                <span class="small">{{ session('login_success') }}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
     <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div class="order-first">
             <h3 class="fw-bold text-dark mb-0">Ringkasan Aktivitas</h3>
@@ -225,6 +238,15 @@
 
     <script>
         $(document).ready(function() {
+            // 🌟 FUNGSI OTOMATIS HILANGKAN ALERT (TAMBAHAN) 🌟
+            if ($("#autoAlert").length > 0) {
+                window.setTimeout(function() {
+                    $("#autoAlert").fadeTo(100, 0).slideUp(100, function(){
+                        $(this).remove(); 
+                    });
+                }, 1000); // Alert hilang setelah 1 detik
+            }
+
             function updateClock() {
                 let now = new Date();
                 let h = String(now.getHours()).padStart(2, '0');

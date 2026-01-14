@@ -96,6 +96,15 @@
                             <form class="user" method="POST" action="{{ route('login') }}">
                                 @csrf
 
+                                @if (session('success'))
+                                    <div class="alert alert-success alert-dismissible fade show small" role="alert">
+                                        <strong>Berhasil!</strong> {{ session('success') }}
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                @endif
+
                                 @if (session('status'))
                                     <div class="alert alert-success alert-dismissible fade show small" role="alert">
                                         {{ session('status') }}
@@ -165,12 +174,21 @@
     <script src="{{ asset('assets1/js/ruang-admin.min.js') }}"></script>
 
     <script>
-        document.getElementById('togglePassword').addEventListener('click', function () {
-            const passwordInput = document.getElementById('exampleInputPassword');
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.classList.toggle('fa-eye');
-            this.classList.toggle('fa-eye-slash');
+        $(document).ready(function() {
+            // 1. Fungsi Toggle Password (Lihat/Sembunyi Password)
+            $('#togglePassword').on('click', function () {
+                const passwordInput = $('#exampleInputPassword');
+                const type = passwordInput.attr('type') === 'password' ? 'text' : 'password';
+                passwordInput.attr('type', type);
+                $(this).toggleClass('fa-eye fa-eye-slash');
+            });
+
+            // 2. FUNGSI OTOMATIS HILANGKAN ALERT (Setelah 3 detik)
+            window.setTimeout(function() {
+                $(".alert").fadeTo(300, 0).slideUp(300, function(){
+                    $(this).remove(); 
+                });
+            }, 3000); 
         });
     </script>
 </body>

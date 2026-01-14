@@ -3,7 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-// --- A. AUTHENTICATION CONTROLLERS ---
+/*
+|--------------------------------------------------------------------------
+| CONTROLLERS
+|--------------------------------------------------------------------------
+*/
+
+// --- AUTH CONTROLLERS ---
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -16,22 +22,22 @@ use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\SocialiteController;
 
-// --- B. ADMIN CONTROLLERS ---
+// --- ADMIN CONTROLLERS ---
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\InternController;
-use App\Http\Controllers\Admin\AttendanceController;
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 
-// --- C. USER CONTROLLERS ---
+// --- USER CONTROLLERS ---
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\User\AttendanceController as UserAttendanceController;
+use App\Http\Controllers\User\ProfilController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| ROOT & REDIRECT
 |--------------------------------------------------------------------------
 */
-
-// 1. ROOT & REDIRECT LOGIC
 Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->role === 'admin'
@@ -41,11 +47,17 @@ Route::get('/', function () {
     return redirect()->route('login.form');
 });
 
-// 2. GUEST ROUTES (Belum Login)
+/*
+|--------------------------------------------------------------------------
+| GUEST ROUTES (BELUM LOGIN)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function () {
+
     // Login & Register
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login.form');
     Route::post('/login', [LoginController::class, 'login'])->name('login');
+
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register.form');
     Route::post('/register', [RegisterController::class, 'register'])->name('register');
 
@@ -55,14 +67,19 @@ Route::middleware('guest')->group(function () {
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.update');
 
-    // Socialite (Google)
+    // Socialite Google
     Route::get('auth/google', [SocialiteController::class, 'redirectToProvider'])->name('socialite.google.redirect');
     Route::get('auth/google/callback', [SocialiteController::class, 'handleProviderCallback'])->name('socialite.google.callback');
 });
 
-// 3. PROTECTED ROUTES (Sudah Login)
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATED ROUTES
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth'])->group(function () {
 
+    // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     // Email Verification & Password Confirmation
@@ -74,11 +91,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
     Route::post('/confirm-password', [ConfirmablePasswordController::class, 'store']);
 
-    // --- ADMIN GROUP ---
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN ROUTES
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('admin')->middleware(['role:admin'])->group(function () {
+
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
-        // Data Peserta Magang (Resource)
+        // Data Peserta Magang
         Route::resource('/data-magang', InternController::class)->names([
             'index'   => 'admin.interns.index',
             'create'  => 'admin.interns.create',
@@ -89,8 +111,8 @@ Route::middleware(['auth'])->group(function () {
             'destroy' => 'admin.interns.destroy',
         ]);
 
-        // Manajemen Rekap Absensi
-        Route::controller(AttendanceController::class)->group(function () {
+        // Rekap Absensi
+        Route::controller(AdminAttendanceController::class)->group(function () {
             Route::get('/rekap-absensi', 'index')->name('admin.attendance.index');
             Route::get('/rekap-absensi/create', 'create')->name('admin.attendance.create');
             Route::post('/rekap-absensi', 'store')->name('admin.attendance.store');
@@ -99,7 +121,7 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('/rekap-absensi/{id}', 'destroy')->name('admin.attendance.destroy');
         });
 
-        // Laporan & Cetak PDF
+        // Laporan
         Route::controller(ReportController::class)->group(function () {
             Route::get('/laporan-bulanan', 'index')->name('admin.laporan.index');
             Route::get('/laporan-bulanan/pdf', 'exportPdf')->name('admin.laporan.pdf');
@@ -107,9 +129,26 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    // --- USER GROUP ---
+    /*
+    |--------------------------------------------------------------------------
+    | USER ROUTES
+    |--------------------------------------------------------------------------
+    */
     Route::prefix('user')->middleware(['role:user'])->group(function () {
+
         Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+
+        // Update Password
         Route::put('/password', [PasswordController::class, 'update'])->name('user.password.update');
+
+        // Absensi User
+        Route::get('/absensi', [UserAttendanceController::class, 'index'])->name('user.absensi.index');
+        Route::post('/absensi/check-in', [UserAttendanceController::class, 'checkIn'])->name('user.absensi.checkin');
+        Route::post('/absensi/check-out', [UserAttendanceController::class, 'checkOut'])->name('user.absensi.checkout');
+        Route::post('/absensi/izin', [UserAttendanceController::class, 'submitIzin'])->name('user.absensi.izin');
+
+        // Profil
+        Route::get('/profil', [ProfilController::class, 'index'])->name('user.profil');
+        Route::put('/profil', [ProfilController::class, 'update'])->name('user.profil.update');
     });
 });

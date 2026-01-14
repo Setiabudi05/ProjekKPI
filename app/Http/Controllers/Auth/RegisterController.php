@@ -13,38 +13,15 @@ use Illuminate\Http\JsonResponse;
 
 class RegisterController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Register Controller
-    |--------------------------------------------------------------------------
-    */
-
     use RegistersUsers;
 
-    /**
-     * Where to redirect users after registration.
-     * Kita atur ke /login, tetapi yang menentukan adalah metode register() di bawah.
-     *
-     * @var string
-     */
     protected $redirectTo = '/login'; 
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest');
     }
 
-    /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
     protected function validator(array $data)
     {
         return Validator::make($data, [
@@ -54,57 +31,33 @@ class RegisterController extends Controller
         ]);
     }
 
-    /**
-     * Create a new user instance after a valid registration.
-     * Default role untuk pengguna baru kita set 'user'.
-     *
-     * @param  array  $data
-     * @return \App\Models\User
-     */
     protected function create(array $data)
     {
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'role' => 'user', // Set role default untuk pengguna baru
+            'role' => 'user', 
             'password' => Hash::make($data['password']),
         ]);
     }
     
-    /**
-     * Handle a registration request for the application.
-     * ⭐ METODE INI DI OVERRIDE UNTUK MENCEGAH AUTO-LOGIN DAN MENGALIHKAN KE LOGIN. ⭐
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
-     */
     public function register(Request $request)
     {
-        // 1. Validasi data
         $this->validator($request->all())->validate();
 
-        // 2. Buat user dan kirim event Registered
         event(new Registered($user = $this->create($request->all())));
 
-        // 3. JANGAN LAKUKAN LOGIN ($this->guard()->login($user); DIHILANGKAN)
-
-        // 4. Redirect ke halaman login dengan pesan sukses.
         if ($response = $this->registered($request, $user)) {
             return $response;
         }
 
         return $request->wantsJson()
                     ? new JsonResponse([], 201)
-                    // Redirect ke rute login.form dengan pesan sukses
+                    // Mengirimkan flash message 'success' ke halaman login
                     : redirect()->route('login.form')
-                        ->with('success', 'Registrasi berhasil! Silakan login dengan akun Anda.');
+                        ->with('success', 'Registrasi berhasil! Silakan masuk ke akun yang baru saja Anda buat.');
     }
 
-    /**
-     * Tampilkan formulir registrasi.
-     * Ini memastikan view 'auth.register' dimuat.
-     * * @return \Illuminate\View\View
-     */
     public function showRegistrationForm()
     {
         return view('auth.register'); 

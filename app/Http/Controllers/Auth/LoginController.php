@@ -4,30 +4,36 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Support\Facades\Auth; // Pastikan ini di-import
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
+    public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+    }
+
     /**
-     * Dihapus: protected $redirectTo = '/home';
-     * Ditambahkan: Custom method redirectTo()
-     */
-    
-    /**
-     * Dapatkan path setelah login berhasil.
+     * Tentukan arah redirect berdasarkan role
      */
     protected function redirectTo()
     {
-        // Pengecekan peran
         if (Auth::user()->role === 'admin') {
-            return route('admin.dashboard'); // '/admin/dashboard'
+            return route('admin.dashboard');
         }
-        
-        // Default untuk user biasa
-        return route('user.dashboard'); // '/user/dashboard'
+        return route('user.dashboard');
     }
 
-    // ... (Sisa kode seperti constructor)
+    /**
+     * Method ini dijalankan SETELAH user berhasil login.
+     * Digunakan untuk mengirim pesan sukses.
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        return redirect()->intended($this->redirectTo())
+            ->with('login_success', 'Selamat Datang Kembali, ' . $user->name . '!');
+    }
 }
